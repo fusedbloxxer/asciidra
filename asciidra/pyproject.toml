@@ -5,10 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "Andrei Ionescu", email = "voidwarden@yahoo.com" }]
 requires-python = ">=3.13"
-dependencies = ["numpy>=2.3.4", "torch>=2.9.0", "tyro>=0.9.35"]
-
-[project.scripts]
-asciidra = "asciidra:main"
+dependencies = [
+    "msgspec>=0.19.0",
+    "numpy>=2.3.4",
+    "torch>=2.9.0",
+    "tyro>=0.9.35",
+]
 
 [tool.uv.sources]
 torch = { index = "torch-cuda" }
