@@ -1,6 +1,6 @@
 [general]
 contrib=contrib-title-conventional-commits
-ignore=B6
+ignore=body-is-missing
 
 [contrib-title-conventional-commits]
-types=fix, feat, chore, docs
+types=fix,feat,chore,docs
