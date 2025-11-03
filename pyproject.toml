@@ -1,0 +1,22 @@
+[project]
+name = "demo"
+version = "1.0.0"
+requires-python = ">=3.13"
+dependencies = ["asciidra"]
+
+[tool.uv.sources]
+asciidra = { workspace = true }
+
+[tool.uv.workspace]
+members = ["asciidra"]
+
+[dependency-groups]
+dev = [
+    "gitlint>=0.19.1",
+    "pre-commit>=4.3.0",
+    "pyright>=1.1.407",
+]
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"

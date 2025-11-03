@@ -1,0 +1,23 @@
+[project]
+name = "asciidra"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [{ name = "Andrei Ionescu", email = "voidwarden@yahoo.com" }]
+requires-python = ">=3.13"
+dependencies = ["numpy>=2.3.4", "torch>=2.9.0", "tyro>=0.9.35"]
+
+[project.scripts]
+asciidra = "asciidra:main"
+
+[tool.uv.sources]
+torch = { index = "torch-cuda" }
+
+[[tool.uv.index]]
+name = "torch-cuda"
+url = "https://download.pytorch.org/whl/cu130"
+explicit = true
+
+[build-system]
+requires = ["uv_build>=0.9.7,<0.10.0"]
+build-backend = "uv_build"
