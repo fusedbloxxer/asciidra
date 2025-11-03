@@ -6,14 +6,20 @@ readme = "README.md"
 authors = [{ name = "Andrei Ionescu", email = "voidwarden@yahoo.com" }]
 requires-python = ">=3.13"
 dependencies = [
+    "einops>=0.8.1",
+    "einx[torch]>=0.3.0",
+    "imageio>=2.37.0",
+    "matplotlib>=3.10.7",
     "msgspec>=0.19.0",
     "numpy>=2.3.4",
     "torch>=2.9.0",
+    "torchvision>=0.24.0",
     "tyro>=0.9.35",
 ]
 
 [tool.uv.sources]
 torch = { index = "torch-cuda" }
+torchvision = { index = "torch-cuda" }
 
 [[tool.uv.index]]
 name = "torch-cuda"
@@ -23,3 +29,8 @@ explicit = true
 [build-system]
 requires = ["uv_build>=0.9.7,<0.10.0"]
 build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pyqt6>=6.10.0",
+]
