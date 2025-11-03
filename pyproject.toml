@@ -11,11 +11,31 @@ asciidra = { workspace = true }
 members = ["asciidra"]
 
 [dependency-groups]
-dev = [
-    "gitlint>=0.19.1",
-    "pre-commit>=4.3.0",
-    "pyright>=1.1.407",
-]
+dev = ["gitlint>=0.19.1", "pre-commit>=4.3.0", "pyright>=1.1.407"]
+
+[tool.ruff]
+indent-width = 4
+line-length = 300
+include = ["pyproject.toml", "*.py", "*.ipynb"]
+
+[tool.ruff.lint]
+extend-select = ["ICN", "I"]
+extend-fixable = ["ICN", "I"]
+
+[tool.ruff.format]
+line-ending = "lf"
+quote-style = "double"
+indent-style = "space"
+
+[tool.ruff.lint.isort]
+order-by-type = true
+lines-between-types = 1
+lines-after-imports = 2
+force-wrap-aliases = true
+
+[tool.ruff.lint.flake8-import-conventions.extend-aliases]
+"torch.nn.functional" = "F"
+"numpy.typing" = "npt"
 
 [tool.pyright]
 venvPath = "."
