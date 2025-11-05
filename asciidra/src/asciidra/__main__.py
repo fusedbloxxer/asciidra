@@ -4,7 +4,6 @@ import shutil
 
 from typing import List, Literal, Tuple
 
-import cv2 as cv
 import einx
 import imageio.v3 as iio
 import matplotlib.pyplot as plt
@@ -65,6 +64,9 @@ class Args(msgspec.Struct):
     # Gumbel-Softmax smoothness factor
     tau: float = 0.75
 
+    # Exponential moving average for solution params
+    ema: float = 0.25
+
     # Seed to reproduce output
     seed: int = 42
 
@@ -77,13 +79,9 @@ def main(args: OmitArgPrefixes[Args]) -> None:
     torch.manual_seed(args.seed)
     device = torch.device(args.device)
 
-    # Read input image as grayscale and preprocess
+    # Read input image as grayscale and convert to tensor
     image_raw: npt.NDArray = iio.imread(args.input, pilmode="RGB").astype(np.uint8)
-    image_grey = cv.cvtColor(image_raw, cv.COLOR_RGB2GRAY)
-    image_proc = cv.medianBlur(image_grey, 5)
-
-    # Convert to Tensor
-    image_rgb: Image = TF.to_image(image_proc)
+    image_rgb: Image = TF.to_image(image_raw)
     image_input = TF.to_dtype(image_rgb, scale=True)
     image_input = TF.to_grayscale(image_input)
 
@@ -147,22 +145,28 @@ def main(args: OmitArgPrefixes[Args]) -> None:
     # Initialize state
     state_param: Tensor = torch.ones([n_g, s_h, s_w], requires_grad=True, device=device)
     min_state: Tensor = state_param
-    solution: Tensor = state_param
-    pb = tqdm()
+    min_loss: float = 100.0
+    ema: float = args.ema
     lr: float = args.eta
-    min_loss = 100.0
-    step = 0
 
     # Use stochastic gradient descent algorithm to minimize loss w.r.t. logits matrix
     opt = Adam([state_param], lr=args.eta)
-    sch = ReduceLROnPlateau(opt, factor=0.85, patience=25, cooldown=5)
+    sch = ReduceLROnPlateau(opt, factor=0.85, patience=50, cooldown=25)
+    pb = tqdm()
+    step = 0
 
     # Optimization Loop
     while True:
         # Use Gumbel-Softmax to learn soft categorical distribution
         weights: Tensor = F.gumbel_softmax(state_param, tau=args.tau, hard=True, dim=0)
         predict: Tensor = einx.dot("n_g s_h s_w, n_g h_g w_g -> (s_h h_g) (s_w w_g)", weights, glyphs)
-        loss: Tensor = F.mse_loss(predict, image_input)
+
+        # Compute Loss
+        target_blur = F.avg_pool2d(image_input[None, None, ...], kernel_size=5, stride=1, padding=2).squeeze()
+        predict_blur = F.avg_pool2d(predict[None, None, ...], kernel_size=5, stride=1, padding=2).squeeze()
+        loss_avg = F.huber_loss(predict_blur, target_blur, delta=1.5)
+        loss_pix: Tensor = F.huber_loss(predict, image_input, delta=1.5)
+        loss = 0.25 * loss_avg + 0.75 * loss_pix
 
         # Log
         pb.set_description(f"loss={loss.item():.2f}, lr={lr:.2f}")
@@ -174,10 +178,9 @@ def main(args: OmitArgPrefixes[Args]) -> None:
             break
 
         # Save minimum state
-        if min_loss > loss:
-            min_state = state_param.cpu().clone().detach()  # type: ignore
-            solution = predict.cpu().clone().detach()  # type: ignore
-            min_loss = loss
+        if min_loss >= loss:
+            min_state = ema * min_state + (1 - ema) * state_param
+            min_loss = loss.item()
 
         # Adjust learning rate
         if lr != sch.get_last_lr()[0]:
@@ -195,6 +198,10 @@ def main(args: OmitArgPrefixes[Args]) -> None:
         # Increment
         pb.update()
         step += 1
+
+    # Compute solution
+    min_state = min_state.cpu()
+    solution = einx.dot("n_g s_h s_w, n_g h_g w_g -> (s_h h_g) (s_w w_g)", F.one_hot(min_state.argmax(dim=0), num_classes=n_g).permute((2, 0, 1)).type(torch.float32), glyphs.cpu())
 
     # Transfer to host
     axes: List[Axes] = plt.subplots(nrows=2, ncols=1)[1]
