@@ -19,6 +19,7 @@ colorama==0.4.6 ; sys_platform == 'win32' \
     --hash=sha256:4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6
     # via
     #   click
+    #   tqdm
     #   tyro
 contourpy==1.3.3 \
     --hash=sha256:083e12155b210502d0bca491432bb04d56dc3432f95a979b429f2848c3dbe880 \
@@ -366,6 +367,7 @@ numpy==2.3.4 \
     #   einx
     #   imageio
     #   matplotlib
+    #   opencv-python
     #   torchvision
 nvidia-cublas==13.0.0.19 ; sys_platform == 'linux' \
     --hash=sha256:381b1a0ca636fdcb6920a871e8fc89dbfd1f6157f421ed0a6f2673e14cffd3bd \
@@ -436,6 +438,15 @@ nvidia-nvtx==13.0.39 ; sys_platform == 'linux' \
     --hash=sha256:cc113127785c96db8a0fe715df92db9788777b4b3d1bd713d42f75969201b5ce \
     --hash=sha256:cddd2e08b35144f1000631c3880c9ebbcb8a2863d762e76f92d47d30ecaf87cc
     # via torch
+opencv-python==4.11.0.86 \
+    --hash=sha256:03d60ccae62304860d232272e4a4fda93c39d595780cb40b161b310244b736a4 \
+    --hash=sha256:085ad9b77c18853ea66283e98affefe2de8cc4c1f43eda4c100cf9b2721142ec \
+    --hash=sha256:1b92ae2c8852208817e6776ba1ea0d6b1e0a1b5431e971a2a0ddd2a8cc398202 \
+    --hash=sha256:432f67c223f1dc2824f5e73cdfcd9db0efc8710647d4e813012195dc9122a52a \
+    --hash=sha256:6b02611523803495003bd87362db3e1d2a0454a6a63025dc6658a9830570aa0d \
+    --hash=sha256:810549cb2a4aedaa84ad9a1c92fbfdfc14090e2749cedf2c1589ad8359aa169b \
+    --hash=sha256:9d05ef13d23fe97f575153558653e2d6e87103995d54e6a35db3f282fe1f9c66
+    # via asciidra
 packaging==25.0 \
     --hash=sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484 \
     --hash=sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f
@@ -608,6 +619,10 @@ torchvision==0.24.0+cu130 ; python_full_version >= '3.15' or platform_machine !=
     --hash=sha256:b7a9d83c0a56d7b8d9018450c2f686d269b151553e64ca9e7ff611fefff74ab8 \
     --hash=sha256:c1e55f3a33452c6958bb9b25d4f03c9ccd24e139607c97c7322a1b9b26eeda1f \
     --hash=sha256:c9a290a0ace580854c8f741ec3c8cc1a1fce16a8ad51d298d3f8d9c985527f0e
+    # via asciidra
+tqdm==4.67.1 \
+    --hash=sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2 \
+    --hash=sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2
     # via asciidra
 triton==3.5.0 ; sys_platform == 'linux' \
     --hash=sha256:03127d9b33aaf979c856676b394bc059ec1d68cb6da68ae03f62dd8ad77a04ae \

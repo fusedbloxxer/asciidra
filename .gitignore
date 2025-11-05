@@ -1,5 +1,6 @@
 ### Project ###
 resources/
+.venv/
 
 ### Linux ###
 *~
