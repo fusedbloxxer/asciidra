@@ -1,20 +1,51 @@
 # asciidra
 
-Convert Images to ASCII art using deep learning optimization methods
+Convert images to ASCII art using deep learning techniques that are optimization / gradient descent based.
+
+## CLI Description
+
+The CLI is exposed using the `Args` class, which contains the following parameters:
+
+- `input`: Path to the RGB input image.
+- `chars`: Path to the character sheet.
+- `font`: Path to the font file.
+- `output`: Path to the output directory.
+- `glyphs`: Path to create glyphs.
+- `size`: Size of the font text.
+- `pad`: Character padding all sides.
+- `max_steps`: Maximum optimization iterations.
+- `eps`: Error threshold to end optimization.
+- `eta`: Convergence rate.
+- `tau`: Gumbel-Softmax smoothness factor.
+- `ema`: Exponential moving average for solution params.
+- `seed`: Seed to reproduce output.
+- `device`: Accelerator used to run the code.
+
+## Example Usage
 
 ```shell
-uv run python -m asciidra                              \
+uv run python -m asciidra \
  --font /usr/share/fonts/noto/NotoSansMono-Regular.ttf \
- --chars resources/charsets/complex.txt                \
- --input resources/images/reze.jpg                     \
- --glyphs resources/glyphs                             \
- --output resources/output                             \
- --device 'cuda:1'                                     \
- --max-steps 300                                       \
- --eps 0.005                                           \
- --eta 1.25                                            \
- --tau 0.95                                            \
- --seed 42                                             \
- --pad 0.0                                             \
+ --chars resources/charsets/complex.txt \
+ --input resources/images/landscape.jpg \
+ --glyphs resources/glyphs \
+ --output resources/output \
+ --device 'cuda:0' \
+ --max-steps 300 \
+ --eps 0.005 \
+ --eta 1.25 \
+ --tau 0.95 \
+ --seed 42 \
+ --pad 0.0 \
  --size 8
 ```
+
+## Examples
+
+### Original Image
+
+![Original Image](resources/images/landscape.jpg)
+
+### ASCII Image
+
+![ASCII Image](resources/output/landscape.jpg)

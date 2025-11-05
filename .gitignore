@@ -1,5 +1,7 @@
 ### Project ###
-resources/
+resources/*/*
+!resources/images/landscape.jpg
+!resources/output/landscape.jpg
 .venv/
 
 ### Linux ###
