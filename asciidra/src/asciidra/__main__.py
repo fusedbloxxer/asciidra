@@ -2,109 +2,60 @@ import os
 import pathlib
 import shutil
 
-from typing import List, Literal, Tuple
+from typing import List, Tuple
 
-import einx
 import imageio.v3 as iio
 import matplotlib.pyplot as plt
-import msgspec
 import numpy as np
 import numpy.typing as npt
 import PIL
 import PIL.Image
 import torch
-import torch.nn.functional as F
 import torchvision.transforms.v2.functional as TF
 import tyro
 
 from matplotlib.axes import Axes
+from msgspec.structs import asdict
 from PIL import ImageDraw, ImageFont
 from PIL.ImageFont import FreeTypeFont
-from torch import Tensor
-from torch.optim import Adam
-from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision.tv_tensors import Image
-from tqdm import tqdm
 from tyro.conf import OmitArgPrefixes
 
-
-class Args(msgspec.Struct):
-    """Convert an RGB Image to ASCII art"""
-
-    # Path to the RGB input image
-    input: str
-
-    # Path to the character sheet
-    chars: str
-
-    # Path to the font file
-    font: str
-
-    # Path to the output dir
-    output: str
-
-    # Path to create glyphs
-    glyphs: str
-
-    # Size of the font text
-    size: int = 8
-
-    # Character padding all sides
-    pad: float = 0.25
-
-    # Maximum optimization iterations
-    max_steps: int = 64
-
-    # Error threshold to end optimization
-    eps: float = 0.01
-
-    # Convergence rate
-    eta: float = 0.75
-
-    # Gumbel-Softmax smoothness factor
-    tau: float = 0.75
-
-    # Exponential moving average for solution params
-    ema: float = 0.25
-
-    # Seed to reproduce output
-    seed: int = 42
-
-    # Accelerator used to run the code
-    device: Literal["cpu", "cuda:0", "cuda:1"] = "cuda:0"
+from .algs import Algorithm, ASCIIConfig, ASCIIOutput, SGDAlgorithm
+from .args import Args
 
 
 def main(args: OmitArgPrefixes[Args]) -> None:
     # Environment
-    torch.manual_seed(args.seed)
-    device = torch.device(args.device)
+    torch.manual_seed(args.env.seed)
+    device = torch.device(args.env.device)
 
     # Read input image as grayscale and convert to tensor
-    image_raw: npt.NDArray = iio.imread(args.input, pilmode="RGB").astype(np.uint8)
+    image_raw: npt.NDArray = iio.imread(args.io.input, pilmode="RGB").astype(np.uint8)
     image_rgb: Image = TF.to_image(image_raw)
     image_input = TF.to_dtype(image_rgb, scale=True)
     image_input = TF.to_grayscale(image_input)
 
     # Use charset from disk
-    with open(args.chars, "r", encoding="utf-8") as chars_file:
+    with open(args.io.chars, "r", encoding="utf-8") as chars_file:
         charset: List[str] = list(sorted(set(chars_file.read())))
 
     # Clear cache
-    if os.path.exists(args.glyphs):
-        shutil.rmtree(args.glyphs)
+    if os.path.exists(args.io.glyphs):
+        shutil.rmtree(args.io.glyphs)
 
     # Create new directory for glyphs
-    glyphdir = pathlib.Path(args.glyphs)
+    glyphdir = pathlib.Path(args.io.glyphs)
     glyphdir.mkdir(parents=True, exist_ok=True)
 
     # Load font to use for glyphs and use given size
-    font_ascii: FreeTypeFont = ImageFont.truetype(args.font, size=args.size)
+    font_ascii: FreeTypeFont = ImageFont.truetype(args.io.font, size=args.ascii.size)
 
     # Compute max width and max height across distinct glyphs
     bboxes: List[Tuple[float, float, float, float]] = [font_ascii.getbbox(text=ch) for ch in charset]
     sizes: List[Tuple[float, ...]] = [(bbox[2] - bbox[0], bbox[3] - bbox[1]) for bbox in bboxes]
-    max_w = int(max(w for w, _ in sizes) + 2 * args.pad)
-    max_h = int(max(h for _, h in sizes) + 2 * args.pad)
+    max_w = int(max(w for w, _ in sizes) + 2 * args.ascii.pad)
+    max_h = int(max(h for _, h in sizes) + 2 * args.ascii.pad)
 
     # Generate glyphs
     for index, (char, bbox) in enumerate(zip(charset, bboxes)):
@@ -142,66 +93,10 @@ def main(args: OmitArgPrefixes[Args]) -> None:
     w_new = w_gly * (s_w := w_inp // w_gly)
     image_input = TF.resize(image_input, size=[h_new, w_new]).squeeze(0).to(device)
 
-    # Initialize state
-    state_param: Tensor = torch.ones([n_g, s_h, s_w], requires_grad=True, device=device)
-    min_state: Tensor = state_param
-    min_loss: float = 100.0
-    ema: float = args.ema
-    lr: float = args.eta
-
-    # Use stochastic gradient descent algorithm to minimize loss w.r.t. logits matrix
-    opt = Adam([state_param], lr=args.eta)
-    sch = ReduceLROnPlateau(opt, factor=0.85, patience=50, cooldown=25)
-    pb = tqdm()
-    step = 0
-
-    # Optimization Loop
-    while True:
-        # Use Gumbel-Softmax to learn soft categorical distribution
-        weights: Tensor = F.gumbel_softmax(state_param, tau=args.tau, hard=True, dim=0)
-        predict: Tensor = einx.dot("n_g s_h s_w, n_g h_g w_g -> (s_h h_g) (s_w w_g)", weights, glyphs)
-
-        # Compute Loss
-        target_blur = F.avg_pool2d(image_input[None, None, ...], kernel_size=5, stride=1, padding=2).squeeze()
-        predict_blur = F.avg_pool2d(predict[None, None, ...], kernel_size=5, stride=1, padding=2).squeeze()
-        loss_avg = F.huber_loss(predict_blur, target_blur, delta=1.5)
-        loss_pix: Tensor = F.huber_loss(predict, image_input, delta=1.5)
-        loss = 0.25 * loss_avg + 0.75 * loss_pix
-
-        # Log
-        pb.set_description(f"loss={loss.item():.2f}, lr={lr:.2f}")
-
-        # End iteration early
-        if loss < args.eps:
-            break
-        if step > args.max_steps:
-            break
-
-        # Save minimum state
-        if min_loss >= loss:
-            min_state = ema * min_state + (1 - ema) * state_param
-            min_loss = loss.item()
-
-        # Adjust learning rate
-        if lr != sch.get_last_lr()[0]:
-            lr = sch.get_last_lr()[0]
-            pb.set_description(f"loss={loss.item():.2f}, lr={lr:.2f}")
-
-        # Propagate Loss
-        opt.zero_grad()
-        loss.backward()
-
-        # Optimize
-        opt.step()
-        sch.step(loss.item())
-
-        # Increment
-        pb.update()
-        step += 1
-
-    # Compute solution
-    min_state = min_state.cpu()
-    solution = einx.dot("n_g s_h s_w, n_g h_g w_g -> (s_h h_g) (s_w w_g)", F.one_hot(min_state.argmax(dim=0), num_classes=n_g).permute((2, 0, 1)).type(torch.float32), glyphs.cpu())
+    # Convert Image to ASCII
+    configuration = ASCIIConfig(sizes=(n_g, s_h, s_w), chars=charset, glyphs=glyphs)
+    algorithm: Algorithm = SGDAlgorithm(**asdict(args.alg), ascii=configuration, device=args.env.device)
+    ascii: ASCIIOutput = algorithm.convert(image_input)
 
     # Transfer to host
     axes: List[Axes] = plt.subplots(nrows=2, ncols=1)[1]
@@ -212,23 +107,21 @@ def main(args: OmitArgPrefixes[Args]) -> None:
     axes[0].imshow(image_raw)
     axes[1].grid(False)
     axes[1].set_title("ASCII")
-    axes[1].imshow(solution, cmap="grey")
+    axes[1].imshow(ascii["image"], cmap="grey")
     plt.tight_layout()
     plt.show()
 
     # Output filepaths
-    input_path = pathlib.Path(args.input)
-    ascii_image_path = os.path.join(args.output, input_path.name)
-    ascii_texts_path = os.path.join(args.output, input_path.stem + ".txt")
+    input_path = pathlib.Path(args.io.input)
+    ascii_image_path = os.path.join(args.io.output, input_path.name)
+    ascii_texts_path = os.path.join(args.io.output, input_path.stem + ".txt")
 
     # Save to disk as image
-    TF.to_pil_image(solution).save(ascii_image_path)
+    TF.to_pil_image(ascii["image"]).save(ascii_image_path)
 
     # Save to disk as ASCII
     with open(ascii_texts_path, "w", encoding="utf-8") as ascii_file:
-        state_i: List[List[int]] = min_state.argmax(dim=0).tolist()
-        ascii: List[List[str]] = [[charset[i] for i in sub] for sub in state_i]
-        ascii_file.write("\n".join(["".join(line) for line in ascii]))
+        ascii_file.write("\n".join(["".join(line) for line in ascii["chars"]]))
 
 
 tyro.cli(main)

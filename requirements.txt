@@ -209,6 +209,10 @@ kiwisolver==1.4.9 \
     --hash=sha256:efb3a45b35622bb6c16dbfab491a8f5a391fe0e9d45ef32f4df85658232ca0e2 \
     --hash=sha256:f68e4f3eeca8fb22cc3d731f9715a13b652795ef657a13df1ad0c7dc0e9731df
     # via matplotlib
+lpips==0.1.4 \
+    --hash=sha256:3846331df6c69688aec3d300a5eeef6c529435bc8460bd58201c3d62e56188fa \
+    --hash=sha256:fd537af5828b69d2e6ffc0a397bd506dbc28ca183543617690844c08e102ec5e
+    # via asciidra
 markdown-it-py==4.0.0 \
     --hash=sha256:87327c59b172c5011896038353a81343b6754500a08cd7a4973bb48c6d578147 \
     --hash=sha256:cb0a2b4aa34f932c007117b194e945bd74e0ec24133ceb5bac59009cda1cb9f3
@@ -370,6 +374,7 @@ numpy==2.3.4 \
     #   contourpy
     #   einx
     #   imageio
+    #   lpips
     #   matplotlib
     #   scikit-learn
     #   scipy
@@ -622,7 +627,9 @@ scipy==1.16.3 \
     --hash=sha256:f667a4542cc8917af1db06366d3f78a5c8e83badd56409f94d1eac8d8d9133fa \
     --hash=sha256:fb4b29f4cf8cc5a8d628bc8d8e26d12d7278cd1f219f22698a378c3d67db5e4b \
     --hash=sha256:ffa6eea95283b2b8079b821dc11f50a17d0571c92b43e2b5b12764dc5f9b285d
-    # via scikit-learn
+    # via
+    #   lpips
+    #   scikit-learn
 setuptools==80.9.0 \
     --hash=sha256:062d34222ad13e0cc312a4c02d73f059e86a4acbfbdea8f8f76b28c99f306922 \
     --hash=sha256:f36b47402ecde768dbfafc46e8e4207b4360c654f1f3bb84475f0a28628fb19c
@@ -664,13 +671,16 @@ torch==2.9.0+cu130 \
     # via
     #   asciidra
     #   einx
+    #   lpips
     #   torchvision
 torchvision==0.24.0 ; python_full_version < '3.15' and platform_machine == 'aarch64' and platform_python_implementation == 'CPython' and sys_platform == 'linux' \
     --hash=sha256:17796ba46108217166898e6c4d922df64fbd1fb903d3d30fc7109c9ceb122273 \
     --hash=sha256:4964e10fa3da769e97dde0beae00485d9f8b61da184605e163b435d2fd7929f5 \
     --hash=sha256:5c81a5f78b56aa4f9423e2f0b633b52a9b0a2ebcf35eda1fcef1ef0ddddc0a74 \
     --hash=sha256:d98b4093a67b0be7b29ee372585367c0deeb30643647cb5b77458baef7e066e4
-    # via asciidra
+    # via
+    #   asciidra
+    #   lpips
 torchvision==0.24.0+cu130 ; python_full_version >= '3.15' or platform_machine != 'aarch64' or platform_python_implementation != 'CPython' or sys_platform != 'linux' \
     --hash=sha256:32613a3b76a002330db81ed63994ec8fb4aef38a3affb626c435aea9607187b9 \
     --hash=sha256:507a45b6874fdf46b5dd15d3a03b10b5612fe50658b2fb4de3998ad45758c1af \
@@ -680,11 +690,15 @@ torchvision==0.24.0+cu130 ; python_full_version >= '3.15' or platform_machine !=
     --hash=sha256:b7a9d83c0a56d7b8d9018450c2f686d269b151553e64ca9e7ff611fefff74ab8 \
     --hash=sha256:c1e55f3a33452c6958bb9b25d4f03c9ccd24e139607c97c7322a1b9b26eeda1f \
     --hash=sha256:c9a290a0ace580854c8f741ec3c8cc1a1fce16a8ad51d298d3f8d9c985527f0e
-    # via asciidra
+    # via
+    #   asciidra
+    #   lpips
 tqdm==4.67.1 \
     --hash=sha256:26445eca388f82e72884e0d580d5464cd801a3ea01e63e5601bdff9ba6a48de2 \
     --hash=sha256:f8aef9c52c08c13a65f30ea34f4e5aac3fd1a34959879d7e59e63027286627f2
-    # via asciidra
+    # via
+    #   asciidra
+    #   lpips
 triton==3.5.0 ; sys_platform == 'linux' \
     --hash=sha256:03127d9b33aaf979c856676b394bc059ec1d68cb6da68ae03f62dd8ad77a04ae \
     --hash=sha256:188da5b81fa2f8322c27fec1627703eac24cb9bb7ab0dfbe9925973bc1b070d3 \

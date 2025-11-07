@@ -24,20 +24,20 @@ The CLI is exposed using the `Args` class, which contains the following paramete
 ## Example Usage
 
 ```shell
-uv run python -m asciidra                               \
- --font /usr/share/fonts/noto/NotoSansMono-Regular.ttf  \
- --chars resources/charsets/square.txt                  \
- --input resources/images/feffy.png                     \
- --glyphs resources/glyphs                              \
- --output resources/output                              \
- --device 'cuda:0'                                      \
- --max-steps 600                                        \
- --eps 0.005                                            \
- --eta 1.25                                             \
- --tau 0.95                                             \
- --seed 42                                              \
- --pad 0.0                                              \
- --size 8
+uv run python -m asciidra                                 \
+    --font /usr/share/fonts/noto/NotoSansMono-Regular.ttf \
+    --input ./resources/images/landscape.jpg              \
+    --chars ./resources/charsets/square.txt               \
+    --output ./resources/output                           \
+    --glyphs ./resources/glyphs                           \
+    --device 'cuda:0'                                     \
+    --eps 0.005                                           \
+    --steps 1000                                          \
+    --eta 1.25                                            \
+    --tau 0.95                                            \
+    --seed 42                                             \
+    --pad 0.0                                             \
+    --size 8
 ```
 
 ## Examples
